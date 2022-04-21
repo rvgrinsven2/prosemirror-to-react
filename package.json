@@ -1,7 +1,7 @@
 {
-  "name": "prosemirror-to-html-js",
+  "name": "prosemirror-to-react",
   "version": "1.0.2",
-  "description": "Takes ProseMirror JSON and outputs HTML",
+  "description": "Takes ProseMirror JSON and outputs React nodes",
   "main": "index.js",
   "scripts": {
     "test": "mocha --recursive"
@@ -10,7 +10,7 @@
     "prosemirror",
     "text-editor"
   ],
-  "author": "Ashwani Agarwal",
+  "author": "Romé van Grinsven",
   "license": "ISC",
   "dependencies": {},
   "devDependencies": {

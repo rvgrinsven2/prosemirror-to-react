@@ -1,179 +1,255 @@
 const { htmlEntities, arrayify } = require("./utils");
+const React = require("react");
 
 class Renderer {
-    constructor () {
-        this.document = undefined;
-        this.nodes = [
-            require("./Nodes/Blockquote"),
-            require("./Nodes/BulletList"),
-            require("./Nodes/CodeBlock"),
-            require("./Nodes/Heading"),
-            require("./Nodes/ListItem"),
-            require("./Nodes/OrderedList"),
-            require("./Nodes/Paragraph"),
-            require("./Nodes/Image")
-        ];
-        this.marks = [
-            require("./Marks/Bold"),
-            require("./Marks/Code"),
-            require("./Marks/Italic"),
-            require("./Marks/Link")
-        ];
+  constructor() {
+    this.document = undefined;
+    this.nodes = [
+      require("./Nodes/Blockquote"),
+      require("./Nodes/BulletList"),
+      require("./Nodes/CodeBlock"),
+      require("./Nodes/Heading"),
+      require("./Nodes/ListItem"),
+      require("./Nodes/OrderedList"),
+      require("./Nodes/Paragraph"),
+      require("./Nodes/Image"),
+      require("./Nodes/HardBreak"),
+    ];
+    this.marks = [
+      require("./Marks/Bold"),
+      require("./Marks/Code"),
+      require("./Marks/Italic"),
+      require("./Marks/Link"),
+    ];
+  }
+
+  setDocument(value) {
+    if (typeof value === "string") {
+      value = JSON.parse(value);
+    } else if (typeof value === "array") {
+      value = JSON.parse(JSON.stringify(value));
     }
 
-    setDocument (value) {
-        if (typeof value === "string") {
-            value = JSON.parse(value);
-        } else if (typeof value === "array") {
-            value = JSON.parse(JSON.stringify(value));
-        }
+    this.document = value;
+  }
 
-        this.document = value;
+  renderNode(node) {
+    let renderClass;
+    let tag = {};
+    let attrs = null;
+    for (let i in this.nodes) {
+      const NodeClass = this.nodes[i];
+      renderClass = new NodeClass(node);
+
+      if (renderClass.matching()) {
+        tag = renderClass.tag();
+        if (tag.tag) {
+          attrs = tag.attrs;
+          tag = tag.tag;
+        }
+        break;
+      }
     }
 
-    renderNode (node) {
-        let html = [];
-
-        if (node.marks) {
-            node.marks.forEach(mark => {
-                for (let i in this.marks) {
-                    const MarkClass = this.marks[i];
-                    const renderClass = new MarkClass(mark);
-                    if (renderClass.matching()) {
-                        html.push(this.renderOpeningTag(renderClass.tag()));
-                    }
-                }
-            })
+    let children = null;
+    if (node.content) {
+      children = [];
+      for (let i in node.content) {
+        const nestedNode = node.content[i];
+        children.push(this.renderNode(nestedNode));
+      }
+    } else if (node.text) {
+      children = htmlEntities(node.text);
+      if (!node.marks || Object.values(node.marks).length === 0) {
+        return children;
+      }
+    } else if (renderClass.text()) {
+      children = renderClass.text();
+      if (!node.marks || Object.values(node.marks).length === 0) {
+        return children;
+      }
+    }
+    if (!tag || Object.values(tag).length === 0) {
+      console.log(node.marks);
+      if (node.marks) {
+        const mark = node.marks[0];
+        for (let i in this.marks) {
+          const MarkClass = this.marks[i];
+          const renderClass = new MarkClass(mark);
+          if (renderClass.matching()) {
+            tag = renderClass.tag();
+            console.log(node);
+            console.log("deze tag", tag);
+            if (tag[0].tag) {
+              attrs = tag[0].attrs;
+              tag = tag[0].tag;
+            }
+          }
         }
+        if (node.marks.length > 1) {
+          children = this.renderNode({
+            type: "text",
+            marks: node.marks.slice(1),
+            text: node.text,
+          });
+        }
+      } else {
+        tag = "div";
+      }
+    }
+    console.log(tag);
+    if (tag) {
+      return React.createElement(tag, attrs, children);
+    }
+    return null;
 
-        let renderClass;
+    let html = [];
 
-        for (let i in this.nodes) {
-            const NodeClass = this.nodes[i];
-            renderClass = new NodeClass(node);
+    if (node.marks) {
+      node.marks.forEach((mark) => {
+        for (let i in this.marks) {
+          const MarkClass = this.marks[i];
+          const renderClass = new MarkClass(mark);
+          if (renderClass.matching()) {
+            html.push(this.renderOpeningTag(renderClass.tag()));
+          }
+        }
+      });
+    }
+
+    for (let i in this.nodes) {
+      const NodeClass = this.nodes[i];
+      renderClass = new NodeClass(node);
+
+      if (renderClass.matching()) {
+        html.push(this.renderOpeningTag(renderClass.tag()));
+        break;
+      }
+    }
+
+    if (node.content) {
+      for (let i in node.content) {
+        const nestedNode = node.content[i];
+        html.push(this.renderNode(nestedNode));
+      }
+    } else if (node.text) {
+      html.push(htmlEntities(node.text));
+    } else if (renderClass.text()) {
+      html.push(renderClass.text());
+    }
+
+    // renderClass;
+    for (let i in this.nodes) {
+      let NodeClass = this.nodes[i];
+      renderClass = new NodeClass(node);
+
+      if (renderClass.selfClosing()) {
+        continue;
+      }
+
+      if (renderClass.matching()) {
+        html.push(this.renderClosingTag(renderClass.tag()));
+      }
+    }
+
+    if (node.marks) {
+      node.marks
+        .slice()
+        .reverse()
+        .forEach((mark) => {
+          for (let i in this.marks) {
+            const MarkClass = this.marks[i];
+            const renderClass = new MarkClass(mark);
 
             if (renderClass.matching()) {
-                html.push(this.renderOpeningTag(renderClass.tag()));
-                break;
+              html.push(this.renderClosingTag(renderClass.tag()));
             }
-        }
+          }
+        });
+    }
 
-        if (node.content) {
-            for (let i in node.content) {
-                const nestedNode = node.content[i];
-                html.push(this.renderNode(nestedNode));
+    return html.join("");
+  }
+
+  renderOpeningTag(tags) {
+    tags = arrayify(tags);
+
+    if (!tags || !tags.length) {
+      return null;
+    }
+
+    return tags
+      .map((item) => {
+        if (typeof item === "string") {
+          return `<${item}>`;
+        }
+        let attrs = "";
+
+        if (item.attrs) {
+          for (let attribute in item.attrs) {
+            const value = item.attrs[attribute];
+            if (value) {
+              attrs += ` ${attribute}="${value}"`;
             }
-        } else if (node.text) {
-            html.push(htmlEntities(node.text));
-        } else if (renderClass.text()) {
-            html.push(renderClass.text());
+          }
         }
 
-        // renderClass;
-        for (let i in this.nodes) {
-            let NodeClass = this.nodes[i];
-            renderClass = new NodeClass(node);
+        return `<${item.tag}${attrs}>`;
+      })
+      .join("");
+  }
 
-            if (renderClass.selfClosing()) {
-                continue;
-            }
+  renderClosingTag(tags) {
+    tags = arrayify(tags);
+    tags = tags.slice().reverse();
 
-            if (renderClass.matching()) {
-                html.push(this.renderClosingTag(renderClass.tag()));
-            }
+    if (!tags || !tags.length) {
+      return null;
+    }
+
+    return tags
+      .map((item) => {
+        if (typeof item === "string") {
+          return `</${item}>`;
         }
 
-        if (node.marks) {
-            node.marks.slice().reverse().forEach((mark) => {
-                for (let i in this.marks) {
-                    const MarkClass = this.marks[i];
-                    const renderClass = new MarkClass(mark);
+        return `</${item.tag}>`;
+      })
+      .join("");
+  }
 
-                    if (renderClass.matching()) {
-                        html.push(this.renderClosingTag(renderClass.tag()));
-                    }
-                }
-            })
-        }
+  render(value) {
+    this.setDocument(value);
 
-        return html.join("");
+    let html = [];
+
+    for (const i in this.document.content) {
+      let node = this.document.content[i];
+      html.push(this.renderNode(node));
     }
 
-    renderOpeningTag (tags) {
-        tags = arrayify(tags);
+    return html;
+  }
 
-        if (!tags || !tags.length) {
-            return null;
-        }
+  addNode(node) {
+    this.nodes.push(node);
+  }
 
-        return tags.map(item => {
-            if (typeof item === "string") {
-                return `<${item}>`;
-            }
-            let attrs = "";
-
-            if (item.attrs) {
-                for (let attribute in item.attrs) {
-                    const value = item.attrs[attribute];
-                    if (value) {
-                        attrs += ` ${attribute}="${value}"`;
-                    }
-                }
-            }
-
-            return `<${item.tag}${attrs}>`;
-        }).join("");
+  addNodes(nodes) {
+    for (const i in nodes) {
+      this.addNode(nodes[i]);
     }
+  }
 
-    renderClosingTag (tags) {
-        tags = arrayify(tags);
-        tags = tags.slice().reverse();
+  addMark(mark) {
+    this.marks.push(mark);
+  }
 
-        if (!tags || !tags.length) {
-            return null;
-        }
-
-        return tags.map(item => {
-            if (typeof item === "string") {
-                return `</${item}>`;
-            }
-
-            return `</${item.tag}>`;
-        }).join("")
+  addMarks(marks) {
+    for (const i in marks) {
+      this.addMark(marks[i]);
     }
-
-    render (value) {
-        this.setDocument(value);
-
-        let html = [];
-
-        for (const i in this.document.content) {
-            let node = this.document.content[i];
-            html.push(this.renderNode(node));
-        }
-
-        return html.join("");
-    }
-
-    addNode (node) {
-        this.nodes.push(node);
-    }
-
-    addNodes (nodes) {
-        for (const i in nodes) {
-            this.addNode(nodes[i]);
-        }
-    }
-
-    addMark (mark) {
-        this.marks.push(mark);
-    }
-
-    addMarks (marks) {
-        for (const i in marks) {
-            this.addMark(marks[i]);
-        }
-    }
+  }
 }
 
 module.exports = Renderer;

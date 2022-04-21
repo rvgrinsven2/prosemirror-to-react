@@ -5,6 +5,7 @@
 Takes ProseMirror JSON and outputs HTML.
 
 ## Installation
+
 ```bash
 npm install prosemirror-to-html-js --save
 ```
@@ -16,38 +17,40 @@ const Renderer = require("prosemirror-to-html").Renderer;
 
 const renderer = new Renderer();
 
-console.log(renderer.render({
-  "type": "doc",
-  "content": [
-    {
-      "type": "paragraph",
-      "content": [
-        {
-          "type": "text",
-          "text": "Example Paragraph"
-        }
-      ]
-    }
-  ]
-}));  // `<p>Example Text</p>`
+console.log(
+  renderer.render({
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [
+          {
+            type: "text",
+            text: "Example Paragraph",
+          },
+        ],
+      },
+    ],
+  })
+); // `<p>Example Text</p>`
 ```
 
 ## Supported Nodes
 
-* Blockquote
-* BulletList
-* CodeBlock
-* Heading
-* ListItem
-* OrderedList
-* Paragraph
+- Blockquote
+- BulletList
+- CodeBlock
+- Heading
+- ListItem
+- OrderedList
+- Paragraph
 
 ## Supported Marks
 
-* Bold
-* Code
-* Italic
-* Link
+- Bold
+- Code
+- Italic
+- Link
 
 ## Custom Nodes
 
@@ -57,17 +60,18 @@ Define your node as a class -
 const Node = require("prosemirror-to-html").Node;
 
 class CustomNode extends Node {
-    matching () {
-        return this.node.type === "custom_node";
-    }
+  matching() {
+    return this.node.type === "custom_node";
+  }
 
-    tag () {
-        return "cnode";
-    }
+  tag() {
+    return "cnode";
+  }
 }
 ```
 
 Feed it to `renderer` instance -
+
 ```js
 renderer.addNode(CustomNode);
 ```

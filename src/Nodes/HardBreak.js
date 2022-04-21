@@ -2,11 +2,15 @@ const Node = require("./Node");
 
 class Paragraph extends Node {
   matching() {
-    return this.node.type === "paragraph";
+    return this.node.type === "hard_break";
   }
 
   tag() {
-    return "p";
+    return "br";
+  }
+
+  selfClosing() {
+    return true;
   }
 }
 
