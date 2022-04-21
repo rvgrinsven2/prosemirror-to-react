@@ -70,7 +70,6 @@ class Renderer {
       }
     }
     if (!tag || Object.values(tag).length === 0) {
-      console.log(node.marks);
       if (node.marks) {
         const mark = node.marks[0];
         for (let i in this.marks) {
@@ -78,8 +77,6 @@ class Renderer {
           const renderClass = new MarkClass(mark);
           if (renderClass.matching()) {
             tag = renderClass.tag();
-            console.log(node);
-            console.log("deze tag", tag);
             if (tag[0].tag) {
               attrs = tag[0].attrs;
               tag = tag[0].tag;
@@ -97,7 +94,6 @@ class Renderer {
         tag = "div";
       }
     }
-    console.log(tag);
     if (tag) {
       return React.createElement(tag, attrs, children);
     }
