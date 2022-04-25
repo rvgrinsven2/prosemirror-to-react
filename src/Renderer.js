@@ -34,7 +34,7 @@ class Renderer {
     this.document = value;
   }
 
-  renderNode(node) {
+  renderNode(node, key = 0) {
     let renderClass;
     let tag = {};
     let attrs = null;
@@ -57,7 +57,7 @@ class Renderer {
       children = [];
       for (let i in node.content) {
         const nestedNode = node.content[i];
-        children.push(this.renderNode(nestedNode));
+        children.push(this.renderNode(nestedNode, i));
       }
     } else if (node.text) {
       children = htmlEntities(node.text);
@@ -95,10 +95,8 @@ class Renderer {
         tag = "div";
       }
     }
-    console.log(node)
-        console.log(tag)
     if (tag) {
-      return React.createElement(tag, attrs, children);
+      return React.createElement(tag, {...attrs, key }, children);
     } 
     return null;
 
@@ -224,7 +222,7 @@ class Renderer {
 
     for (const i in this.document.content) {
       let node = this.document.content[i];
-      html.push(this.renderNode(node));
+      html.push(this.renderNode(node, i));
     }
 
     return html;
