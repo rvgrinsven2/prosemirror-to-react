@@ -20,6 +20,7 @@ class Renderer {
       require("./Marks/Code"),
       require("./Marks/Italic"),
       require("./Marks/Link"),
+      require("./Marks/Underline"),
     ];
   }
 
@@ -94,9 +95,11 @@ class Renderer {
         tag = "div";
       }
     }
+    console.log(node)
+        console.log(tag)
     if (tag) {
       return React.createElement(tag, attrs, children);
-    }
+    } 
     return null;
 
     let html = [];
