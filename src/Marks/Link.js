@@ -11,6 +11,7 @@ class Link extends Mark {
         tag: "a",
         attrs: {
           href: this.mark.attrs.href,
+          target: this.mark.attrs.target,
         },
       },
     ];
