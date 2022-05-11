@@ -60,7 +60,7 @@ class Renderer {
         children.push(this.renderNode(nestedNode, i));
       }
     } else if (node.text) {
-      children = htmlEntities(node.text);
+      children = node.text;
       if (!node.marks || Object.values(node.marks).length === 0) {
         return children;
       }
